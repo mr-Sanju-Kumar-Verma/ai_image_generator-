@@ -5,12 +5,10 @@ import os
 from datetime import datetime
 from utils import add_watermark, save_image_with_metadata
 
-# --- Configuration ---
-MODEL_ID = "runwayml/stable-diffusion-v1-5"  # Standard open-source model
+MODEL_ID = "runwayml/stable-diffusion-v1-5"  el
 OUTPUT_DIR = "generated_images"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# --- Model Loading (Cached) ---
 @st.cache_resource
 def load_model():
     """
@@ -18,7 +16,6 @@ def load_model():
     """
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
-    # Use float16 for GPU to save memory, float32 for CPU
     dtype = torch.float16 if device == "cuda" else torch.float32
     
     pipe = StableDiffusionPipeline.from_pretrained(
@@ -27,16 +24,12 @@ def load_model():
     )
     pipe.to(device)
     
-    # Simple Content Filter (Built-in to diffusers)
-    # The pipeline has a built-in safety checker by default.
-    
+  
     return pipe, device
 
-# --- UI Layout ---
 st.title("🎨 AI-Powered Image Generator")
 st.markdown("Generate images from text using Stable Diffusion.")
 
-# Sidebar controls
 with st.sidebar:
     st.header("Settings")
     num_images = st.slider("Number of Images", 1, 4, 1)
@@ -45,7 +38,6 @@ with st.sidebar:
     
     st.info("Note: Higher steps = better quality but slower generation.")
 
-# Main Input
 prompt = st.text_area("Enter your prompt:", placeholder="A futuristic city at sunset...")
 negative_prompt = st.text_input("Negative Prompt (Optional):", placeholder="blurry, low quality, distorted")
 
@@ -58,7 +50,6 @@ if st.button("Generate Image"):
                 pipe, device = load_model()
                 st.success(f"Model loaded on {device.upper()}")
                 
-                # Generation Call
                 output = pipe(
                     prompt, 
                     negative_prompt=negative_prompt, 
@@ -67,26 +58,20 @@ if st.button("Generate Image"):
                     num_images_per_prompt=num_images
                 )
                 
-                # Check for NSFW content flag (Standard in diffusers)
                 for i, image in enumerate(output.images):
-                    # Safety check verification
                     if output.nsfw_content_detected and output.nsfw_content_detected[i]:
                         st.error(f"Image {i+1} blocked: Content filter triggered.")
                         continue
 
-                    # Process Image
                     watermarked_img = add_watermark(image)
                     
-                    # Save locally
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     filename = f"img_{timestamp}_{i}.png"
                     filepath = os.path.join(OUTPUT_DIR, filename)
                     save_image_with_metadata(watermarked_img, prompt, filepath)
                     
-                    # Display
                     st.image(watermarked_img, caption=f"Result {i+1}", use_column_width=True)
                     
-                    # Download Button
                     with open(filepath, "rb") as file:
                         st.download_button(
                             label=f"Download Image {i+1}",
